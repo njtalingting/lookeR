@@ -1,12 +1,11 @@
-#' Scan METACRAN for Filipino Packages
+#' Scan CRAN for Filipino Packages
 #' @export
 scan_metacran <- function() {
-  message("Looking through METACRAN data logs...")
+  message("Accessing primary CRAN mirror records...")
   
-  # CHANGED: Switched endpoint to a secondary mirror service
-  req <- httr2::request("https://r-pkg.org")
-  resp <- httr2::req_perform(req)
-  cran_data <- jsonlite::fromJSON(httr2::resp_body_string(resp))
+  # Pull live data directly from the official CRAN master mirror matrix
+  db_matrix <- available.packages(repos = "https://cloud.r-project.org")
+  cran_data <- as.data.frame(db_matrix, stringsAsFactors = FALSE)
   
   # Search terms for local footprint
   ph_terms <- "philippines|manila|psgc|dost|psa|pnp|pagasa|marina|up diliman"
@@ -15,28 +14,16 @@ scan_metacran <- function() {
   # Whitelist of known PH developer usernames or names
   whitelist <- "njtalingting|talingting" 
   
-  detected_pkgs <- lapply(cran_data, function(pkg) {
-    search_block <- paste(
-      pkg$Package, pkg$Title, pkg$Description, 
-      pkg$Maintainer, pkg$Author, 
-      collapse = " "
-    )
-    
-    # Run the scanner
-    if (grepl(ph_terms, search_block, ignore.case = TRUE) || 
-        grepl(ph_emails, search_block, ignore.case = TRUE) ||
-        grepl(whitelist, search_block, ignore.case = TRUE)) {
-      return(data.frame(
-        Package = pkg$Package, 
-        Maintainer = pkg$Maintainer, 
-        Version = pkg$Version,
-        stringsAsFactors = FALSE
-      ))
-    }
-    return(NULL)
-  })
+  # Use R's fast vectorized logical indices to search rows
+  detected_rows <- grep(ph_terms, cran_data$Package, ignore.case = TRUE) |
+                   grep(ph_terms, cran_data$Title, ignore.case = TRUE) |
+                   grep(ph_terms, cran_data$Description, ignore.case = TRUE) |
+                   grep(ph_emails, cran_data$Maintainer, ignore.case = TRUE) |
+                   grep(whitelist, cran_data$Maintainer, ignore.case = TRUE)
   
-  result <- do.call(rbind, detected_pkgs)
+  # Extract clean matching subsets
+  result <- cran_data[detected_rows, c("Package", "Maintainer", "Version")]
   rownames(result) <- NULL
+  
   return(result)
 }
