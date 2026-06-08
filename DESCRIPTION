@@ -1,0 +1,10 @@
+Package: lookeR
+Title: Find Filipino-Authored R Packages
+Version: 0.1.0
+Description: An R package for finding Filipino-made R packages by scanning METACRAN logs.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports: 
+    httr2,
+    jsonlite
