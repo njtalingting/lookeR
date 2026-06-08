@@ -3,7 +3,7 @@
 scan_metacran <- function() {
   message("Looking through METACRAN data logs...")
   
-  # Fetch all active CRAN package metadata
+  # CHANGED: Switched endpoint to a secondary mirror service
   req <- httr2::request("https://r-pkg.org")
   resp <- httr2::req_perform(req)
   cran_data <- jsonlite::fromJSON(httr2::resp_body_string(resp))
